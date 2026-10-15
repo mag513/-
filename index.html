@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>土地評価計算</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>土地評価計算</h1>
+    <p class="sub">財産評価基本通達（路線価方式・倍率方式）に基づく宅地の相続税評価額</p>
+  </header>
+
+  <main class="layout">
+    <form id="form" class="inputs" novalidate>
+      <section class="card">
+        <h2>基本情報</h2>
+        <div class="grid">
+          <label class="wide">所在地・メモ
+            <input type="text" name="memo" placeholder="例）東京都○○区○○1丁目">
+          </label>
+          <label>評価方式
+            <select name="method">
+              <option value="rosenka">路線価方式</option>
+              <option value="bairitsu">倍率方式</option>
+            </select>
+          </label>
+          <label>地積
+            <span class="unit"><input type="number" name="area" step="0.01" min="0" required><em>㎡</em></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card" data-show="bairitsu">
+        <h2>倍率方式</h2>
+        <div class="grid">
+          <label>固定資産税評価額
+            <span class="unit"><input type="number" name="fixedAssetValue" step="1" min="0"><em>円</em></span>
+          </label>
+          <label>評価倍率
+            <span class="unit"><input type="number" name="multiplier" step="0.01" min="0" value="1.1"><em>倍</em></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card" data-show="rosenka">
+        <h2>正面路線</h2>
+        <div class="grid">
+          <label class="wide">地区区分
+            <select name="district"></select>
+          </label>
+          <label>路線価（路線価図の「300D」→ 300000）
+            <span class="unit"><input type="number" name="frontPrice" step="1" min="0" placeholder="300000"><em>円/㎡</em></span>
+          </label>
+          <label>間口距離
+            <span class="unit"><input type="number" name="frontage" step="0.01" min="0"><em>m</em></span>
+          </label>
+          <label>奥行距離
+            <span class="unit"><input type="number" name="depth" step="0.01" min="0"><em>m</em></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card" data-show="rosenka">
+        <h2>側方・裏面路線 <small>（角地・二方路線地など）</small></h2>
+        <div id="sides"></div>
+        <button type="button" class="btn ghost" id="addSide">＋ 側方路線を追加</button>
+        <fieldset class="toggle">
+          <label class="check"><input type="checkbox" name="rearEnabled"> 裏面路線あり（二方路線）</label>
+          <div class="grid" data-when="rearEnabled">
+            <label>裏面路線価
+              <span class="unit"><input type="number" name="rearPrice" step="1" min="0"><em>円/㎡</em></span>
+            </label>
+            <label>奥行距離（空欄＝正面と同じ）
+              <span class="unit"><input type="number" name="rearDepth" step="0.01" min="0"><em>m</em></span>
+            </label>
+            <label>接道按分割合（空欄＝1）
+              <input type="number" name="rearRatio" step="0.01" min="0" max="1">
+            </label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card" data-show="rosenka">
+        <h2>画地補正</h2>
+        <fieldset class="toggle">
+          <label class="check"><input type="checkbox" name="irregularEnabled"> 不整形地</label>
+          <div class="grid" data-when="irregularEnabled">
+            <label>想定整形地の間口
+              <span class="unit"><input type="number" name="assumedFrontage" step="0.01" min="0"><em>m</em></span>
+            </label>
+            <label>想定整形地の奥行
+              <span class="unit"><input type="number" name="assumedDepth" step="0.01" min="0"><em>m</em></span>
+            </label>
+            <p class="hint wide">奥行距離は「想定整形地の奥行」と「地積÷間口」の短い方を自動で用います。</p>
+          </div>
+        </fieldset>
+        <fieldset class="toggle">
+          <label class="check"><input type="checkbox" name="largeScaleEnabled"> 地積規模の大きな宅地</label>
+          <div class="grid" data-when="largeScaleEnabled">
+            <label>所在地
+              <select name="metro">
+                <option value="1">三大都市圏（500㎡以上）</option>
+                <option value="0">三大都市圏以外（1,000㎡以上）</option>
+              </select>
+            </label>
+            <p class="hint wide">市街化調整区域・工業専用地域・指定容積率（東京都特別区400%以上、その他300%以上）でないことを確認してください。</p>
+          </div>
+        </fieldset>
+        <fieldset class="toggle">
+          <label class="check"><input type="checkbox" name="cliffEnabled"> がけ地等を有する宅地</label>
+          <div class="grid" data-when="cliffEnabled">
+            <label>がけ地の地積
+              <span class="unit"><input type="number" name="cliffArea" step="0.01" min="0"><em>㎡</em></span>
+            </label>
+            <label>がけ地の方位
+              <select name="cliffDirection"></select>
+            </label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card">
+        <h2>その他の減額</h2>
+        <div class="grid">
+          <label>セットバック部分の地積
+            <span class="unit"><input type="number" name="setbackArea" step="0.01" min="0"><em>㎡</em></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>利用区分（権利）</h2>
+        <div class="grid">
+          <label class="wide">利用区分
+            <select name="rightsType">
+              <option value="self">自用地</option>
+              <option value="leasedLand">貸宅地（底地）</option>
+              <option value="rentalBuildingLand">貸家建付地（アパート敷地等）</option>
+              <option value="leasehold">借地権</option>
+              <option value="rentalLeasehold">貸家建付借地権</option>
+            </select>
+          </label>
+          <label data-rights="leaseholdRatio">借地権割合
+            <select name="leaseholdRatio"></select>
+          </label>
+          <label data-rights="tenancy">借家権割合
+            <span class="unit"><input type="number" name="tenancyRatio" step="0.01" min="0" max="1" value="0.3"></span>
+          </label>
+          <label data-rights="tenancy">賃貸割合
+            <span class="unit"><input type="number" name="occupancy" step="0.01" min="0" max="1" value="1"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>小規模宅地等の特例 <small>（任意）</small></h2>
+        <div class="grid">
+          <label>特例の種類
+            <select name="smallSiteType">
+              <option value="">適用しない</option>
+              <option value="residence">特定居住用（330㎡まで80%減）</option>
+              <option value="business">特定事業用（400㎡まで80%減）</option>
+              <option value="rental">貸付事業用（200㎡まで50%減）</option>
+            </select>
+          </label>
+          <label>適用面積（空欄＝上限まで）
+            <span class="unit"><input type="number" name="smallSiteArea" step="0.01" min="0"><em>㎡</em></span>
+          </label>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button type="button" class="btn ghost" id="sample">サンプル入力</button>
+        <button type="button" class="btn ghost" id="clearForm">クリア</button>
+        <button type="button" class="btn ghost" id="export">JSON保存</button>
+        <label class="btn ghost file">JSON読込<input type="file" id="import" accept="application/json"></label>
+      </div>
+    </form>
+
+    <aside class="result" id="result" aria-live="polite">
+      <section class="card summary">
+        <h2>評価結果</h2>
+        <p id="memoOut" class="hint"></p>
+        <div id="error" class="error" hidden></div>
+        <dl class="kpis">
+          <div><dt>1㎡当たりの価額</dt><dd id="perSqm">—</dd></div>
+          <div><dt>自用地の評価額</dt><dd id="selfUse">—</dd></div>
+          <div class="main"><dt id="rightsLabel">評価額</dt><dd id="rightsValue">—</dd></div>
+          <div id="taxableRow" hidden><dt>特例適用後の課税価格</dt><dd id="taxable">—</dd></div>
+        </dl>
+        <ul id="warnings" class="warnings"></ul>
+      </section>
+      <section class="card">
+        <h2>計算明細</h2>
+        <table class="steps">
+          <thead><tr><th>No.</th><th>項目・計算式</th><th class="num">金額</th></tr></thead>
+          <tbody id="steps"></tbody>
+        </table>
+        <button type="button" class="btn" id="print">印刷</button>
+      </section>
+      <p class="disclaimer">本アプリは概算用です。補正率は平成30年分以降の調整率表に基づきます。申告にあたっては国税庁の最新資料や税理士にご確認ください。</p>
+    </aside>
+  </main>
+
+  <a href="#result" class="mobile-bar" id="mobileBar"><span id="mobileLabel">評価額</span><strong id="mobileValue">—</strong></a>
+
+  <template id="sideTpl">
+    <fieldset class="side">
+      <legend>側方路線 <span class="idx"></span> <button type="button" class="link remove">削除</button></legend>
+      <div class="grid">
+        <label>路線価
+          <span class="unit"><input type="number" data-k="price" step="1" min="0"><em>円/㎡</em></span>
+        </label>
+        <label>この路線から見た奥行（空欄＝間口）
+          <span class="unit"><input type="number" data-k="depth" step="0.01" min="0"><em>m</em></span>
+        </label>
+        <label>区分
+          <select data-k="type">
+            <option value="corner">角地</option>
+            <option value="semiCorner">準角地</option>
+          </select>
+        </label>
+        <label>接道按分割合（空欄＝1）
+          <input type="number" data-k="ratio" step="0.01" min="0" max="1">
+        </label>
+      </div>
+    </fieldset>
+  </template>
+
+  <script src="js/tables.js"></script>
+  <script src="js/valuation.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

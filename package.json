@@ -1,0 +1,11 @@
+{
+  "name": "land-valuation",
+  "version": "1.0.0",
+  "description": "財産評価基本通達に基づく土地評価（路線価方式・倍率方式）計算アプリ",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000"
+  },
+  "license": "MIT"
+}
